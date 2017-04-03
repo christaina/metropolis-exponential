@@ -31,9 +31,9 @@ def generate_samples(times,A,lambdas,var):
 
 if __name__=="__main__":
 
-    m = 2
+    m = 4
     max_time = 40
-    data_size = 500
+    data_size = 1000
     #times = np.random.randint(1,max_time,size=data_size)
     times = np.random.uniform(1,max_time,data_size)
 
@@ -53,5 +53,5 @@ if __name__=="__main__":
     plt.title("Noisy Samples vs. True Value of $Y_i = \sum_{i=1}^m A_i e^{-\lambda_it}$")
     plt.savefig("figs/data_distr.png")
     plt.show()
-    np.savetxt('./fake_data.txt',fake_data)
-    np.savetxt('./params.txt',params)
+    np.savetxt('./fake_data_4.txt',fake_data)
+    np.savetxt('./params_4.txt',params)

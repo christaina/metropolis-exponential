@@ -5,10 +5,11 @@ from distribution import dist
 """
 Metropolis Hastings on sample data
 """
-def mh_gaussian(init,ys,ts,iters):
+def mh_gaussian(init,ys,ts,iters,fi=None):
     """
     MH with gaussian proposals
     """
+    print("Running Metropolis Algorithm with Gaussian proposals.")
     D = len(init)
     samples = np.zeros((iters,D))
     my_dist = dist(init)
@@ -19,6 +20,8 @@ def mh_gaussian(init,ys,ts,iters):
 
     cov = (0.1)**2 * np.eye(D)*1./D
     for i in np.arange(0, iters):
+        if fi is not None:
+            write_samp(fi,state)
         # propose a new state
         prop = (np.random.multivariate_normal(state.ravel(), cov))
         move_p = np.log(scipy.stats.multivariate_normal(state,cov).pdf(prop))
@@ -79,12 +82,12 @@ def mh_adap(init,ys,ts,iters):
     print 'Acceptance ratio', accepts/iters
     return samples
 
-def mh_lognormal(init,ys,ts,iters):
+def mh_lognormal(init,ys,ts,iters,fi=None):
     """
     MH with lognormal proposals
     """
+    print("Running Metropolis Algorithm with Log-Normal proposals.")
     D = len(init)
-    samples = np.zeros((iters,D))
     my_dist = dist(init)
     # initialize state and log-likelihood
     state = init.copy()
@@ -92,8 +95,9 @@ def mh_lognormal(init,ys,ts,iters):
     accepts = 0.
 
     cov = (0.1**2)*np.eye(D)*1./D
-    print cov
     for i in np.arange(0, iters):
+        if fi is not None:
+            write_samp(fi,state)
 
         # log(Rv) follow a normal distribution
         mu = np.log(state)
@@ -108,23 +112,28 @@ def mh_lognormal(init,ys,ts,iters):
         rand = np.random.rand()
 
         if np.log(rand) < min(1,((Lp_prop+rev_p) - (Lp_state+move_p))):
-            print ("acct bc %s < %s (iter %s)"%(np.log(rand),(Lp_prop-Lp_state),i))
             accepts += 1
             state = prop.copy()
             Lp_state = Lp_prop
-            print state
+            #print ("acct bc %s < %s (iter %s)"%(np.log(rand),(Lp_prop-Lp_state),i))
+            #print state
         else:
             my_dist.set_params(state)
-        samples[i] = state.copy()
 
     print 'Acceptance ratio', accepts/iters
-    return samples
 
+def write_samp(fn,state):
+    """
+    Write a sample to file
+    """
+    with open(fn,'a') as f:
+        f.write('%s\n'%' '.join(state.astype(str)))
 
-def mh_uni(init,ys,ts,iters,wid=0.1):
+def mh_uni(init,ys,ts,iters,wid=0.1,fi=None):
     """
     Component-wise MH with uniform proposals
     """
+    print("Running Metropolis Algorithm with Uniform proposals.")
     D = len(init)
     samples = np.zeros((iters,D))
     my_dist = dist(init)
@@ -134,7 +143,10 @@ def mh_uni(init,ys,ts,iters,wid=0.1):
     accepts = 0.
 
     for i in np.arange(0, iters):
+        print '***Curr acct: %s'%(float(accepts)/((i+1)*4))
         for j,comp in enumerate(state):
+            if fi is not None:
+                write_samp(fi,state)
             # propose a new state
             prop = (np.random.uniform(comp-wid,comp+wid))
             move_p = np.log(scipy.stats.uniform(comp-wid,comp+wid).pdf(prop))
@@ -142,12 +154,12 @@ def mh_uni(init,ys,ts,iters,wid=0.1):
             prop_state = state.copy()
             prop_state[j]=prop
             my_dist.set_params(prop_state)
-            print prop_state
+            print "\t",prop_state
             Lp_prop = my_dist.log_likelihood(ys,ts)
             rand = np.random.rand()
 
             if np.log(rand) < min(1,((Lp_prop+rev_p) - (Lp_state+move_p))):
-                print ("acct bc %s < %s (iter %s)"%(np.log(rand),\
+                print ("\tacct bc %s < %s (iter %s)"%(np.log(rand),\
                 (Lp_prop-Lp_state),i))
                 accepts += 1
                 state = prop_state.copy()

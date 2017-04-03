@@ -1,10 +1,11 @@
 import numpy as np
+import argparse
+import os
 import matplotlib.pyplot as plt
 from distribution import dist
 import mh
 import pandas as pd
 import sys
-import pylab
 
 def plots(samples,m,params,burn_in=200,fig_name='./figs/chain.png'):
     f, axarr = plt.subplots(2,2)
@@ -27,14 +28,9 @@ def plots(samples,m,params,burn_in=200,fig_name='./figs/chain.png'):
             axarr[1,0].scatter(len(samples)-1,params[i],label=lab)
             axarr[1,0].set_title("Variance vs. Steps")
 
-        #pd.tools.plotting.autocorrelation_plot(samples[burn_in:][:,i],\
-        #label=lab,ax=axarr[1,1])
-
         pd.tools.plotting.autocorrelation_plot(samples[burn_in:][:,i],ax=axarr[1,1])
         axarr[1,1].set_title("Autocorrelation Plot")
 
-
-    #plt.legend()
     plt.savefig(fig_name)
     plt.show()
 
@@ -42,15 +38,30 @@ if __name__=='__main__':
 
     data_path = './fake_data.txt'
     true_params = './params.txt'
-    fig_name = './figs/logi.png'
-    num_samples = 20000
-    if len(sys.argv)>1:
-        num_samples = int(sys.argv[1])
-    if len(sys.argv)>2:
-        fig_name = sys.argv[2]
 
-    print "Running chain for %s samples"%num_samples
-    burn_in = int(num_samples * 0.2)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--nsamp',type=int,default=5000)
+    parser.add_argument('--prop',default='log')
+    parser.add_argument('--rundir',default=None)
+    args = parser.parse_args()
+
+    if not args.rundir:
+        rundir='run_%s_%s'%(args.prop,args.nsamp)
+    else:
+        rundir=args.rundir
+
+    if not os.path.exists(rundir):
+        os.makedirs(rundir)
+
+    fig_name = os.path.join(rundir,'conv.png')
+    outfile = os.path.join(rundir,'samples.txt')
+
+    if os.path.exists(outfile):
+        os.remove(outfile)
+
+    print args
+
+    burn_in = int(args.nsamp * 0.2)
     data = np.loadtxt(data_path)
     params = np.loadtxt(true_params)
 
@@ -59,7 +70,16 @@ if __name__=='__main__':
     print "TRUE: ",params
 
     init = np.ones(len(params))
-    samples = mh.mh_lognormal(init,outputs,times,num_samples)
+
+    if args.prop=='log':
+        mh.mh_lognormal(init,outputs,times,args.nsamp,fi=outfile)
+    elif args.prop=='gau':
+        mh.mh_gaussian(init,outputs,times,args.nsamp,fi=outfile)
+    elif args.prop=='unif':
+        mh.mh_uni(init,outputs,times,args.nsamp,wid=0.1,fi=outfile)
+    
+    
+    samples = np.loadtxt(outfile)
     m = (len(params)-1)/2
     autocorr_times = mh.autocorr_times(samples[burn_in:])
     var_acf = mh.acf(samples[burn_in:][:,-1])
