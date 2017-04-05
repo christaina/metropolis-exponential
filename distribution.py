@@ -14,11 +14,11 @@ class dist(object):
     def prior_pdf(self,max_var=50):
         """
         Probability of parameters for prior
-        distribution - indicator of 1 if A,lambdas in [0,infty]
-        and if var in [0,max_var]
+        distribution - indicator of 1 if A,var in [0,infty]
+        and if lambas in [0,max_var]
         """
-        if (self.var <= max_var) & (np.all(self.A> 0)) \
-        & (np.all(self.lambdas > 0)) & (self.var > 0):
+        if (np.all(self.lambdas <= max_var) & (np.all(self.A> 0)) \
+        & (np.all(self.lambdas > 0)) & (self.var > 0)):
             return 1
         return 0
 

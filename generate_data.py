@@ -1,4 +1,5 @@
 import numpy as np
+import argparse
 import matplotlib.pyplot as plt
 import seaborn as sns
 """
@@ -30,17 +31,22 @@ def generate_samples(times,A,lambdas,var):
     return noise_func(times)
 
 if __name__=="__main__":
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--outfix',default='')
+    parser.add_argument('--size',default=500,type=int)
+    parser.add_argument('--m',default=2,type=int)
+    args=parser.parse_args()
 
-    m = 4
+
+    m = args.m
     max_time = 40
-    data_size = 1000
     #times = np.random.randint(1,max_time,size=data_size)
-    times = np.random.uniform(1,max_time,data_size)
+    times = np.random.uniform(1,max_time,args.size)
 
     # generate parameters
     A = np.random.uniform(low=1, high=15,size=m)
     lambdas = np.random.uniform(low=0, high=1.5,size=m)
-    var = np.random.uniform(low=0.1, high=3)
+    var = np.random.uniform(low=0.1, high=1.5)
     
     params = np.concatenate((A,lambdas,np.array([var])))
     fake_data = np.expand_dims(generate_samples(times,A,lambdas,var),1)
@@ -53,5 +59,5 @@ if __name__=="__main__":
     plt.title("Noisy Samples vs. True Value of $Y_i = \sum_{i=1}^m A_i e^{-\lambda_it}$")
     plt.savefig("figs/data_distr.png")
     plt.show()
-    np.savetxt('./fake_data_4.txt',fake_data)
-    np.savetxt('./params_4.txt',params)
+    np.savetxt('./fake_data'+args.outfix+'.txt',fake_data)
+    np.savetxt('./params'+args.outfix+'.txt',params)

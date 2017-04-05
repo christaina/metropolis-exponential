@@ -43,45 +43,6 @@ def mh_gaussian(init,ys,ts,iters,fi=None):
     print 'Acceptance ratio', accepts/iters
     return samples
 
-
-def mh_adap(init,ys,ts,iters):
-    """
-    MH with gaussian proposals
-    """
-    D = len(init)
-    samples = np.zeros((iters,D))
-    my_dist = dist(init)
-    # initialize state and log-likelihood
-    state = init.copy()
-    Lp_state = my_dist.log_likelihood(ys,ts)
-    accepts = 0.
-    beta = 0.05
-    cov = np.eye(D)
-    cov_b = (beta ** 2) * (0.1**2) * np.eye(D) * 1./D
-    for i in np.arange(0, iters):
-        cov_a = (1-beta)**2 * (2.38)**2 * cov * 1./D
-
-        # propose a new state
-        prop = np.random.multivariate_normal(state.ravel(), cov_a + cov_b)
-        move_p = np.log(scipy.stats.multivariate_normal(state,cov_b+cov).pdf(prop))
-        rev_p = np.log(scipy.stats.multivariate_normal(prop,cov_a+cov_b).pdf(state))
-        my_dist.set_params(prop)
-        Lp_prop = my_dist.log_likelihood(ys,ts)
-        rand = np.random.rand()
-
-        if np.log(rand) < min(1,((Lp_prop+rev_p) - (Lp_state+move_p))):
-            print ("acct bc %s < %s (iter %s)"%(np.log(rand),(Lp_prop-Lp_state),i))
-            accepts += 1
-            state = prop.copy()
-            Lp_state = Lp_prop
-            cov = cov_a
-        else:
-            my_dist.set_params(state)
-        samples[i] = state.copy()
-
-    print 'Acceptance ratio', accepts/iters
-    return samples
-
 def mh_lognormal(init,ys,ts,iters,fi=None):
     """
     MH with lognormal proposals
@@ -109,14 +70,16 @@ def mh_lognormal(init,ys,ts,iters,fi=None):
                                                 pdf(np.log(state)))
         my_dist.set_params(prop)
         Lp_prop = my_dist.log_likelihood(ys,ts)
+        #print Lp_prop+rev_p
+        #print Lp_state+move_p
         rand = np.random.rand()
-
-        if np.log(rand) < min(1,((Lp_prop+rev_p) - (Lp_state+move_p))):
+        prob = min(1,((Lp_prop+rev_p)-(Lp_state+move_p)))
+        if np.log(rand) < prob:
             accepts += 1
             state = prop.copy()
             Lp_state = Lp_prop
-            #print ("acct bc %s < %s (iter %s)"%(np.log(rand),(Lp_prop-Lp_state),i))
-            #print state
+            print ("acct bc %s < %s (iter %s)"%(np.log(rand),prob,i))
+            print state
         else:
             my_dist.set_params(state)
 
@@ -171,8 +134,10 @@ def mh_uni(init,ys,ts,iters,wid=0.1,fi=None):
     print 'Acceptance ratio', accepts/(iters*len(init))
     return samples
 
-def acf(samples):
+def acf(samples,last=None):
     n = len(samples)
+    if not last:
+        last = n/2
     data = np.asarray(samples)
     mean = np.mean(data)
     c0 = np.sum((data - mean) ** 2) / float(n)
@@ -181,7 +146,7 @@ def acf(samples):
         acf_l = (data[:n - h] - mean) * (data[h:] - mean)
         acf_lag = acf_l.sum() / float(n-h) / c0
         return round(acf_lag, 3)
-    x = np.arange(1,n) # Avoiding lag 0 calculation
+    x = np.arange(1,last) # Avoiding lag 0 calculation
     acf_coeffs = map(r, x)
     return acf_coeffs
 
@@ -189,4 +154,4 @@ def autocorr_times(samples):
     """
     Computes autocorrelation time of each param of sampler
     """
-    return [1+2*sum((acf(samples[:,i]))) for i in xrange(samples.shape[1])]
+    return [1+2*sum(np.abs(acf(samples[:,i]))) for i in xrange(samples.shape[1])]
