@@ -42,17 +42,17 @@ def run_plots(samples,params,burn_in=200,fig_name='run.png'):
         if i < m:
             lab = "A_%s"%(i)
             axarr[0,0].plot(np.arange(len(samples)),samples[:,i],label=lab,color=cmap(i*10))
-            axarr[0,0].scatter(len(samples)-1,params[i],label=lab,color=cmap(i*10))
+            axarr[0,0].scatter(len(samples)-1,params[i],label=lab,color='red')
             axarr[0,0].set_title("A Values vs. Steps")
         elif i < 2*m:
             lab = "lambda_%s"%(i-m)
             axarr[0,1].plot(np.arange(len(samples)),samples[:,i],label=lab,color=cmap(i*10))
             axarr[0,1].set_title("Lambda Values vs. Steps")
-            axarr[0,1].scatter(len(samples)-1,params[i],label=lab,color=cmap(i*10))
+            axarr[0,1].scatter(len(samples)-1,params[i],label=lab,color='red')
         else:
             lab = "var"
             axarr[1,0].plot(np.arange(len(samples)),samples[:,i],label=lab)
-            axarr[1,0].scatter(len(samples)-1,params[i],label=lab)
+            axarr[1,0].scatter(len(samples)-1,params[i],label=lab,color='red')
             axarr[1,0].set_title("Variance vs. Steps")
 
         pd.tools.plotting.autocorrelation_plot(samples[burn_in:][:,i],ax=axarr[1,1])
@@ -77,6 +77,7 @@ if __name__=='__main__':
     samples = np.loadtxt(args.samps)
     data=np.loadtxt(args.data)
     params=np.loadtxt(args.params)
+    #params[-1]=np.sqrt(params[-1])
     burn_in = int(0.2*len(samples))
     autocorr_time = int(np.ceil(np.mean(mh.autocorr_times(samples[burn_in:]))))
     print ("Autocorrelation time estimate: %s"%autocorr_time)

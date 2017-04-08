@@ -22,21 +22,22 @@ class dist(object):
             return 1
         return 0
 
-    def pdf(self,sample,time):
+    def sum_exp(self,time):
         """
-        Evaluate probability of sample at a given time
-        for given parameters
+        Evaluate sum of exponentials given current params
         """
-        # sum exponential distributions
-        exp_sum = np.sum([self.A[i]*np.exp(-1.*self.lambdas[i]*time)\
+        sum = np.sum([self.A[i]*np.exp(-1.*self.lambdas[i]*time)\
          for i in xrange(self.m)])
-        #print (scipy.stats.norm(exp_sum,self.var).pdf(sample))
-        return scipy.stats.norm(exp_sum,self.var).pdf(sample)
+        return sum
 
     def log_likelihood(self,samples,times):
-        #print "prior, log-prior: %s,%s"%(self.prior_pdf(),np.log(self.prior_pdf()))
+        """
+        Evaluate log likelihood of data
+        """
         prior_p = np.log(self.prior_pdf())
-        sample_p = np.sum(np.log([self.pdf(s,t) for s,t in zip(samples,times)]))
+        xform = [self.pdf(t) for t in times]
+        lp = scipy.stats.norm(xform,np.sqrt(self.var)).pdf(samples)
+        sample_p =np.sum(np.log(lp))
         ll = prior_p + sample_p
 
         if np.isnan(ll):
