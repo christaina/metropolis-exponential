@@ -58,7 +58,7 @@ def run_plots(samples,params,burn_in=200,fig_name='run.png'):
         ax.scatter(len(samples)-1,params[i],label=lab,color='red')
         ax.set_title(title)
 
-    pd.tools.plotting.autocorrelation_plot(samples[burn_in:][:,i],ax=axarr[1,1])
+        pd.tools.plotting.autocorrelation_plot(samples[burn_in:][:,i],ax=axarr[1,1])
     axarr[1,1].set_title("Autocorrelation Plot")
 
     # rotate axes
