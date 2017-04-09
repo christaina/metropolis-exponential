@@ -11,6 +11,11 @@ class dist(object):
         self.A,self.lambdas = np.split(np.array(params[:-1]),2)
         self.var = params[-1]
 
+    def normal_prior(self,mu,cov):
+        prior_dist = scipy.stats.multivariate_normal(mu,cov)
+        param_set = list(self.A)+list(self.lambdas)+[self.var] 
+        return prior_dist.pdf(param_set)
+
     def prior_pdf(self,max_var=50):
         """
         Probability of parameters for prior
@@ -34,8 +39,11 @@ class dist(object):
         """
         Evaluate log likelihood of data
         """
+        prior_mu = np.ones(2*len(self.A)+1) 
+        prior_var = np.eye(2*len(self.A)+1)*0.7
         prior_p = np.log(self.prior_pdf())
-        xform = [self.pdf(t) for t in times]
+        #prior_p = np.log(self.normal_prior(prior_mu,prior_var))
+        xform = [self.sum_exp(t) for t in times]
         lp = scipy.stats.norm(xform,np.sqrt(self.var)).pdf(samples)
         sample_p =np.sum(np.log(lp))
         ll = prior_p + sample_p

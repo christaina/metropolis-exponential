@@ -11,9 +11,13 @@ def param_plot(est_params,true_params,fig_name='est_params.png'):
     """
     m=len(est_params)/2
     axes = [1]*m+[2]*m+[3]
-    plt.scatter(axes,est_params,c='blue')
-    plt.scatter(axes,true_params,c='red')
+    plt.scatter(axes,(est_params),c='blue',label='Estimated Value')
+    plt.scatter(axes,(true_params),c='red',label='True Value')
     plt.xticks([1,2,3],['A','$\lambda$','$\sigma$'])
+    plt.xlabel("Parameter")
+    plt.ylabel('Parameter Value')
+    plt.title("Estimated vs. True Param Values")
+    plt.legend()
     plt.savefig(fig_name)
     plt.clf()
 
@@ -38,26 +42,26 @@ def run_plots(samples,params,burn_in=200,fig_name='run.png'):
     f, axarr = plt.subplots(2,2)
     cmap = plt.cm.get_cmap("prism")
     for i in xrange(len(params)):
-        lab = None
         if i < m:
             lab = "A_%s"%(i)
-            axarr[0,0].plot(np.arange(len(samples)),samples[:,i],label=lab,color=cmap(i*10))
-            axarr[0,0].scatter(len(samples)-1,params[i],label=lab,color='red')
-            axarr[0,0].set_title("A Values vs. Steps")
+            ax = axarr[0,0]
+            title='A Values vs. Steps'
         elif i < 2*m:
             lab = "lambda_%s"%(i-m)
-            axarr[0,1].plot(np.arange(len(samples)),samples[:,i],label=lab,color=cmap(i*10))
-            axarr[0,1].set_title("Lambda Values vs. Steps")
-            axarr[0,1].scatter(len(samples)-1,params[i],label=lab,color='red')
+            ax = axarr[0,1]
+            title='Lambda Values vs. Steps'
         else:
             lab = "var"
-            axarr[1,0].plot(np.arange(len(samples)),samples[:,i],label=lab)
-            axarr[1,0].scatter(len(samples)-1,params[i],label=lab,color='red')
-            axarr[1,0].set_title("Variance vs. Steps")
+            ax=axarr[1,0]
+            title='Variace vs. Steps'
+        ax.plot(np.arange(len(samples)),samples[:,i],label=lab)
+        ax.scatter(len(samples)-1,params[i],label=lab,color='red')
+        ax.set_title(title)
 
-        pd.tools.plotting.autocorrelation_plot(samples[burn_in:][:,i],ax=axarr[1,1])
-        axarr[1,1].set_title("Autocorrelation Plot")
+    pd.tools.plotting.autocorrelation_plot(samples[burn_in:][:,i],ax=axarr[1,1])
+    axarr[1,1].set_title("Autocorrelation Plot")
 
+    # rotate axes
     for i,ax in enumerate(f.axes):
         plt.sca(ax)
         plt.xticks(rotation=30)
@@ -77,13 +81,16 @@ if __name__=='__main__':
     samples = np.loadtxt(args.samps)
     data=np.loadtxt(args.data)
     params=np.loadtxt(args.params)
-    #params[-1]=np.sqrt(params[-1])
+    params[-1]=np.sqrt(params[-1])
     burn_in = int(0.2*len(samples))
     autocorr_time = int(np.ceil(np.mean(mh.autocorr_times(samples[burn_in:]))))
     print ("Autocorrelation time estimate: %s"%autocorr_time)
     final_samples = np.array([x for i,x in enumerate(samples[burn_in:]) if i%autocorr_time==0])
     print ("%s Samples of params"%len(final_samples))
     est_params = np.mean(np.array(final_samples),axis=0)
+    autocorr_info = np.array([autocorr_time,len(final_samples)])
+    np.savetxt(args.samps.replace('samples.txt','est_params.txt'),est_params)
+    np.savetxt(args.samps.replace('samples.txt','autocorr.txt'),autocorr_info)
     print "EST PARAMS:",est_params
     run_plots(samples,params,burn_in=burn_in,\
             fig_name=args.samps.replace('samples.txt','run.png'))
